@@ -52,50 +52,79 @@ Run the code and verify that the system detects human presence and draws boundin
 
  ###  Python Code:
  
+```
 import cv2
-import imutils
 
-###  Initialize HOG descriptor with people detector
+# --- Ground Truth Input ---
+expected_humans = int(input("Enter the actual number of humans visible to the camera: "))
+
+# Initialize USB camera
+cap = cv2.VideoCapture(0)
+
+# Check if camera is accessible
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    exit()
+
+# Initialize HOG detector
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
-### Initialize video capture
-cap = cv2.VideoCapture(0)  # Change index if using CSI camera
+print("Press 'q' to quit.\n")
 
 while True:
     ret, frame = cap.read()
     if not ret:
+        print("Failed to grab frame.")
         break
 
-  ### Resize frame for faster processing
-    frame = imutils.resize(frame, width=640)
+    # Resize for performance
+    frame_resized = cv2.resize(frame, (640, 480))
 
-  ### Detect people in the image
-    (rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4),
-                                            padding=(8, 8), scale=1.05)
+    # Detect people
+    boxes, weights = hog.detectMultiScale(frame_resized, winStride=(8, 8))
+    detected_count = len(boxes)
 
- ### Draw bounding boxes
-    for (x, y, w, h) in rects:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # Accuracy Calculation
+    if expected_humans > 0:
+        accuracy = min(detected_count, expected_humans) / expected_humans * 100
+    else:
+        accuracy = 100.0 if detected_count == 0 else 0.0
 
-  ### Display the result
-    cv2.imshow("Occupancy Detection", frame)
+    # Print to Console
+    print(f"Humans Detected: {detected_count} | Accuracy: {accuracy:.2f}%")
 
-###  Exit on pressing 'q'
+    # Draw detection boxes and info on frame
+    for (x, y, w, h) in boxes:
+        cv2.rectangle(frame_resized, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    text = f"Detected: {detected_count} | Accuracy: {accuracy:.2f}%"
+    cv2.putText(frame_resized, text, (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+    # Display the result
+    cv2.imshow("Human Detection", frame_resized)
+
+    # Exit on 'q' key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+# Release resources
 cap.release()
 cv2.destroyAllWindows()
+```
 
 
 ### SCREEN SHOTS OF OUTPUT 
+![WhatsApp Image 2025-05-15 at 11 25 17_d75321c3](https://github.com/user-attachments/assets/0080bbad-568f-4901-9567-696c68464078)
 
 
 
 
 
 ### RASPI INTERFACE 
+![WhatsApp Image 2025-05-15 at 11 36 37_1d3f4b36](https://github.com/user-attachments/assets/475eae2f-2ddf-4045-98e5-4caa888077da)
+
 
 
 
